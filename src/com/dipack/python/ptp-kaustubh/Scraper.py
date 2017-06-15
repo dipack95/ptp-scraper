@@ -26,6 +26,7 @@ class PTPField:
     evidences = 'evidences'
     impounded_document = 'impounded_document'
 
+
 fields = [PTPField.vehicle_no,
           PTPField.license_no,
           PTPField.payment_url,
@@ -40,7 +41,6 @@ fields = [PTPField.vehicle_no,
           PTPField.evidences,
           PTPField.impounded_document]
 
-
 mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
             'offences': [{'fine_amount': '200', 'offenses': 'Halting ahead white line', 'sections': '19(1)/177 MVA'},
                          {'fine_amount': '500', 'offenses': 'Without Helmet', 'sections': '129/177'}],
@@ -52,18 +52,18 @@ mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
             'license_no': 'NA'}
 
 excelColumnHeaderOrder = [
-    'Challan No',
-    'Vehicle No',
-    'License No',
-    'Offense Date',
-    'Offense Time',
-    'Offender Mobile No',
-    'Offences',
-    'Compounding Fees',
-    'Evidences',
-    'Impounded Document',
-    'Payment Status',
-    'Payment URL'
+    PTPField.challan_no,
+    PTPField.vehicle_no,
+    PTPField.license_no,
+    PTPField.offense_date,
+    PTPField.offense_time,
+    PTPField.offender_mobile_no,
+    PTPField.offences,
+    PTPField.compounding_fees,
+    PTPField.evidences,
+    PTPField.impounded_document,
+    PTPField.payment_status,
+    PTPField.payment_url
 ]
 
 
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     # challanInfo = s.get_challan_info(challanNumbers[0])
 
     challanInfo = dict(mockData)
-    offensesList = challanInfo.pop('offences')
+    offensesList = challanInfo.pop(PTPField.offences)
     formattedChallanInfoList = []
     for offense in offensesList:
         formattedChallanInfoList = np.append(formattedChallanInfoList, {**offense, **challanInfo.copy()})
