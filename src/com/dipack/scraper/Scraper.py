@@ -30,20 +30,6 @@ class PTPField:
     inner_fine_amount = 'fine_amount'
 
 
-fields = [PTPField.vehicle_no,
-          PTPField.license_no,
-          PTPField.payment_url,
-          PTPField.compounding_fees,
-          PTPField.offences,
-          PTPField.offense_time,
-          PTPField.offender_mobile_no,
-          PTPField.payment_status,
-          PTPField.offense_date,
-          PTPField.challan_no,
-          PTPField.sections,
-          PTPField.evidences,
-          PTPField.impounded_document]
-
 mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
             'offences': [{'fine_amount': '200', 'offenses': 'Halting ahead white line', 'sections': '19(1)/177 MVA'},
                          {'fine_amount': '500', 'offenses': 'Without Helmet', 'sections': '129/177'}],
@@ -67,20 +53,6 @@ excelColumnHeaderOrder = [
     PTPField.compounding_fees,
     PTPField.evidences,
     PTPField.impounded_document
-]
-
-groupByHeader = [
-    PTPField.challan_no,
-    PTPField.vehicle_no,
-    PTPField.license_no,
-    PTPField.offense_date,
-    PTPField.offense_time,
-    PTPField.offender_mobile_no,
-    PTPField.compounding_fees,
-    PTPField.evidences,
-    PTPField.impounded_document,
-    PTPField.payment_status,
-    PTPField.payment_url
 ]
 
 
