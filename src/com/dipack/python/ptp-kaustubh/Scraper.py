@@ -66,9 +66,7 @@ excelColumnHeaderOrder = [
     PTPField.inner_fine_amount,
     PTPField.compounding_fees,
     PTPField.evidences,
-    PTPField.impounded_document,
-    PTPField.payment_status,
-    PTPField.payment_url
+    PTPField.impounded_document
 ]
 
 groupByHeader = [
@@ -180,12 +178,6 @@ class Scraper:
         validKeys = {k: dataDict[k] for k in dataDict.keys() if str(k[0]).upper() in ascii_uppercase}
         return validKeys
 
-    def convert_dict_to_dataframe(self, dataDict):
-        return pd.DataFrame.from_dict(dataDict, orient='index')
-
-    def convert_dict_to_dataframe_style(self, dataDict):
-        return {k: np.array(v) for k, v in dataDict.items()}
-
     def format_challan_info(self, challanInfo):
         for k, v in challanInfo.items():
             if isinstance(v, list):
@@ -222,6 +214,8 @@ if __name__ == '__main__':
     # challanInfo = s.get_challan_info(challanNumbers[0])
 
     challanInfo = dict(mockData)
+    challanInfo.pop(PTPField.payment_url)
+    challanInfo.pop(PTPField.payment_status)
 
     formattedChallanInfoList = s.format_challan_info(challanInfo)
     df = pd.DataFrame.from_records(formattedChallanInfoList)
