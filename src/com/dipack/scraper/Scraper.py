@@ -194,11 +194,6 @@ class Scraper:
         return formattedChallanInfoList
 
 
-def super_awesome_lambda(x):
-    print(x)
-    return x
-
-
 if __name__ == '__main__':
     s = Scraper()
     # licenseCharSeq = list(islice(Scraper.multiletters(ascii_uppercase), 26 * 27))
