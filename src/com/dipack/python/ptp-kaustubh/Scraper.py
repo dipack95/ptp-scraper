@@ -157,12 +157,12 @@ if __name__ == '__main__':
     # challanInfo = s.get_challan_info(challanNumbers[0])
 
     challanInfo = dict(mockData)
-    challanInfoDict = s.convert_dict_to_dataframe_style(challanInfo)
-    challanInfoDf = s.convert_dict_to_dataframe(challanInfoDict).transpose()
-    challanInfoDf = challanInfoDf.sort_index(axis=1)
+    offensesList = challanInfo.pop('offences')
+    formattedChallanInfoList = []
+    for offense in offensesList:
+        formattedChallanInfoList = np.append(formattedChallanInfoList, {**offense, **challanInfo.copy()})
 
-    mess = pd.DataFrame.from_records(challanInfoDf['offences']).transpose()
-
-    # writer = pd.ExcelWriter('Test.xlsx')
-    # challanInfoDf.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
-    # writer.save()
+    df = pd.DataFrame.from_records(formattedChallanInfoList)
+    writer = pd.ExcelWriter('Test.xlsx')
+    df.to_excel(writer, header=True, index=False)
+    writer.save()
