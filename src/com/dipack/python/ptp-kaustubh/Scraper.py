@@ -25,6 +25,9 @@ class PTPField:
     sections = 'sections'
     evidences = 'evidences'
     impounded_document = 'impounded_document'
+    inner_sections = 'sections'
+    inner_offences = 'offenses'
+    inner_fine_amount = 'fine_amount'
 
 
 fields = [PTPField.vehicle_no,
@@ -58,7 +61,23 @@ excelColumnHeaderOrder = [
     PTPField.offense_date,
     PTPField.offense_time,
     PTPField.offender_mobile_no,
-    PTPField.offences,
+    PTPField.inner_offences,
+    PTPField.inner_sections,
+    PTPField.inner_fine_amount,
+    PTPField.compounding_fees,
+    PTPField.evidences,
+    PTPField.impounded_document,
+    PTPField.payment_status,
+    PTPField.payment_url
+]
+
+groupByHeader = [
+    PTPField.challan_no,
+    PTPField.vehicle_no,
+    PTPField.license_no,
+    PTPField.offense_date,
+    PTPField.offense_time,
+    PTPField.offender_mobile_no,
     PTPField.compounding_fees,
     PTPField.evidences,
     PTPField.impounded_document,
@@ -167,7 +186,6 @@ class Scraper:
     def convert_dict_to_dataframe_style(self, dataDict):
         return {k: np.array(v) for k, v in dataDict.items()}
 
-
 if __name__ == '__main__':
     s = Scraper()
     # licenseCharSeq = list(islice(Scraper.multiletters(ascii_uppercase), 26 * 27))
@@ -186,9 +204,11 @@ if __name__ == '__main__':
     offensesList = challanInfo.pop(PTPField.offences)
     formattedChallanInfoList = []
     for offense in offensesList:
-        formattedChallanInfoList = np.append(formattedChallanInfoList, {**offense, **challanInfo.copy()})
+        d = {**offense, **challanInfo.copy()}
+        formattedChallanInfoList = np.append(formattedChallanInfoList, s.convert_dict_to_dataframe_style(d))
 
     df = pd.DataFrame.from_records(formattedChallanInfoList)
     writer = pd.ExcelWriter('Test.xlsx')
-    df.to_excel(writer, header=True, index=False)
+    # df1 = df.groupby(groupByHeader).aggregate(lambda x: x.toList())
+    df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
     writer.save()
