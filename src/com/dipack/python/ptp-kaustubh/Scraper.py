@@ -186,6 +186,24 @@ class Scraper:
     def convert_dict_to_dataframe_style(self, dataDict):
         return {k: np.array(v) for k, v in dataDict.items()}
 
+    def format_challan_info(self, challanInfo):
+        for k, v in challanInfo.items():
+            if isinstance(v, list) and not isinstance(v[0], dict):
+                l = challanInfo.pop(k)
+                challanInfo[k] = ', '.join([i for i in l])
+        offensesList = challanInfo.pop(PTPField.offences)
+        formattedChallanInfoList = []
+        for offense in offensesList:
+            d = {**offense, **challanInfo.copy()}
+            formattedChallanInfoList = np.append(formattedChallanInfoList, d)
+        return formattedChallanInfoList
+
+
+def super_awesome_lambda(x):
+    print(x)
+    return x
+
+
 if __name__ == '__main__':
     s = Scraper()
     # licenseCharSeq = list(islice(Scraper.multiletters(ascii_uppercase), 26 * 27))
@@ -201,14 +219,9 @@ if __name__ == '__main__':
     # challanInfo = s.get_challan_info(challanNumbers[0])
 
     challanInfo = dict(mockData)
-    offensesList = challanInfo.pop(PTPField.offences)
-    formattedChallanInfoList = []
-    for offense in offensesList:
-        d = {**offense, **challanInfo.copy()}
-        formattedChallanInfoList = np.append(formattedChallanInfoList, s.convert_dict_to_dataframe_style(d))
 
+    formattedChallanInfoList = s.format_challan_info(challanInfo)
     df = pd.DataFrame.from_records(formattedChallanInfoList)
     writer = pd.ExcelWriter('Test.xlsx')
-    # df1 = df.groupby(groupByHeader).aggregate(lambda x: x.toList())
     df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
     writer.save()
