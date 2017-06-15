@@ -10,10 +10,36 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-fields = ['Vehicle No', 'License No', 'Payment URL', 'Compounding Fees',
-          'Offences', 'Offense Time', 'Offender Mobile No', 'Payment Status',
-          'Offense Date', 'Challan No', 'Sections', 'Evidences',
-          'Impounded Document']
+
+class PTPField:
+    vehicle_no = 'vehicle_no'
+    license_no = 'license_no'
+    payment_url = 'payment_url'
+    compounding_fees = 'compounding_fees'
+    offences = 'offences'
+    offense_time = 'offense_time'
+    offender_mobile_no = 'offender_mobile_no'
+    payment_status = 'payment_status'
+    offense_date = 'offense_date'
+    challan_no = 'challan_no'
+    sections = 'sections'
+    evidences = 'evidences'
+    impounded_document = 'impounded_document'
+
+fields = [PTPField.vehicle_no,
+          PTPField.license_no,
+          PTPField.payment_url,
+          PTPField.compounding_fees,
+          PTPField.offences,
+          PTPField.offense_time,
+          PTPField.offender_mobile_no,
+          PTPField.payment_status,
+          PTPField.offense_date,
+          PTPField.challan_no,
+          PTPField.sections,
+          PTPField.evidences,
+          PTPField.impounded_document]
+
 
 mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
             'offences': [{'fine_amount': '200', 'offenses': 'Halting ahead white line', 'sections': '19(1)/177 MVA'},
