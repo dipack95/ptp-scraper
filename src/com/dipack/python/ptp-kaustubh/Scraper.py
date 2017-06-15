@@ -15,15 +15,15 @@ fields = ['Vehicle No', 'License No', 'Payment URL', 'Compounding Fees',
           'Offense Date', 'Challan No', 'Sections', 'Evidences',
           'Impounded Document']
 
-mockData = {'Offense Time': '11:43:51', 'Offender Mobile No': 'NA',
-            'Evidences': ['http://punetrafficop.online:8080/File/PTPCHC170504000978_01.png',
-                          'http://punetrafficop.online:8080/File/PTPCHC170504000978_02.png'], 'License No': 'NA',
-            'Impounded Document': 'No Impound', 'Compounding Fees': '700', 'Vehicle No': 'MH12JB2300',
-            'Offense Date': '2017-05-04',
-            'Offences': [{'Offenses': 'Halting ahead white line', 'Fine Amount': '200', 'Sections': '19(1)/177 MVA'},
-                         {'Offenses': 'Without Helmet', 'Fine Amount': '500', 'Sections': '129/177'}],
-            'Payment Status': 'Pending', 'Challan No': 'PTPCHC170504000978',
-            'Payment URL': ['https://punetrafficop.net/'], 'Sections': 'Fine Amount'}
+mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
+            'offences': [{'fine_amount': '200', 'offenses': 'Halting ahead white line', 'sections': '19(1)/177 MVA'},
+                         {'fine_amount': '500', 'offenses': 'Without Helmet', 'sections': '129/177'}],
+            'offense_time': '11:43:51', 'payment_url': ['https://punetrafficop.net/'], 'payment_status': 'Pending',
+            'sections': 'Fine Amount', 'compounding_fees': '700',
+            'evidences': ['http://punetrafficop.online:8080/File/PTPCHC170504000978_01.png',
+                          'http://punetrafficop.online:8080/File/PTPCHC170504000978_02.png'],
+            'impounded_document': 'No Impound', 'offense_date': '2017-05-04', 'offender_mobile_no': 'NA',
+            'license_no': 'NA'}
 
 excelColumnHeaderOrder = [
     'Challan No',
@@ -47,7 +47,7 @@ class Scraper:
                             level=logging.INFO)
 
     @staticmethod
-    def multiletters(seq):
+    def multi_letters(seq):
         for n in count(1):
             for s in product(seq, repeat=n):
                 yield ''.join(s)
@@ -110,7 +110,7 @@ class Scraper:
             v = '';
             for element in columns:
                 if element == columns[0]:
-                    k = element.text.rstrip(':').strip()
+                    k = element.text.rstrip(':').strip().lower().replace(' ', '_')
                 else:
                     if element.find_all('table'):
                         offencesDict = []
@@ -118,7 +118,7 @@ class Scraper:
                         for irow in offencesTable:
                             if irow != offencesTable[0]:
                                 icolumns = irow.find_all('td')
-                                headerRow = [header.text.rstrip(':').strip() for header in
+                                headerRow = [header.text.rstrip(':').strip().lower().replace(' ', '_') for header in
                                              offencesTable[0].find_all('td')]
                                 offencesDict.append(
                                     {headerRow[idx]: val.text.strip() for idx, val in enumerate(icolumns)})
@@ -154,25 +154,15 @@ if __name__ == '__main__':
     # Uncomment this out when you're ready for show time
     # challanList = s.get_challans_for_plate(sampleLicensePlate)
     # challanNumbers = [challan for challan in challanList]
-    # challanInfo = s.get_challan_info
+    # challanInfo = s.get_challan_info(challanNumbers[0])
 
     challanInfo = dict(mockData)
     challanInfoDict = s.convert_dict_to_dataframe_style(challanInfo)
     challanInfoDf = s.convert_dict_to_dataframe(challanInfoDict).transpose()
     challanInfoDf = challanInfoDf.sort_index(axis=1)
 
-    awesome = pd.DataFrame()
-
-    mess = pd.DataFrame.from_records(challanInfoDf['Offences']).transpose()
-    d = pd.DataFrame()
-    for index, row in mess.iterrows():
-        inter = pd.DataFrame()
-        inter = inter.merge(challanInfoDf)
-        dfRow = pd.DataFrame.from_dict(dict(row), orient='index')
-        inter = inter.join(dfRow)
-        d = d.append(inter)
+    mess = pd.DataFrame.from_records(challanInfoDf['offences']).transpose()
 
     # writer = pd.ExcelWriter('Test.xlsx')
     # challanInfoDf.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
     # writer.save()
-    print(d)
