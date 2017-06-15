@@ -48,7 +48,7 @@ mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
             'offences': [{'fine_amount': '200', 'offenses': 'Halting ahead white line', 'sections': '19(1)/177 MVA'},
                          {'fine_amount': '500', 'offenses': 'Without Helmet', 'sections': '129/177'}],
             'offense_time': '11:43:51', 'payment_url': ['https://punetrafficop.net/'], 'payment_status': 'Pending',
-            'sections': 'Fine Amount', 'compounding_fees': '700',
+            'compounding_fees': '700',
             'evidences': ['http://punetrafficop.online:8080/File/PTPCHC170504000978_01.png',
                           'http://punetrafficop.online:8080/File/PTPCHC170504000978_02.png'],
             'impounded_document': 'No Impound', 'offense_date': '2017-05-04', 'offender_mobile_no': 'NA',
@@ -188,9 +188,12 @@ class Scraper:
 
     def format_challan_info(self, challanInfo):
         for k, v in challanInfo.items():
-            if isinstance(v, list) and not isinstance(v[0], dict):
-                l = challanInfo.pop(k)
-                challanInfo[k] = ', '.join([i for i in l])
+            if isinstance(v, list):
+                if not isinstance(v[0], dict):
+                    l = challanInfo.pop(k)
+                    challanInfo[k] = ', '.join([i for i in l])
+                else:
+                    pass
         offensesList = challanInfo.pop(PTPField.offences)
         formattedChallanInfoList = []
         for offense in offensesList:
