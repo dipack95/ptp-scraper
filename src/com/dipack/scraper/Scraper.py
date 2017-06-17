@@ -165,6 +165,28 @@ class Scraper:
             formattedChallanInfoList = np.append(formattedChallanInfoList, d)
         return formattedChallanInfoList
 
+    def download_images(self, links, challanNumber):
+        logger.info("Downloading images for challan {}".format(challanNumber))
+        for img in links:
+            imgFileName = challanNumber + '_' + img.__str__().split('/')[-1]
+            with open(imgFileName, 'wb') as imgFile:
+                response = requests.get(img)
+                if not response.ok:
+                    logger.error("Failed to download images!")
+                    pass
+                else:
+                    imgFile.write(response.content)
+
+    def write_to_excel(self, challanInfo):
+        challanInfo.pop(PTPField.payment_url)
+        challanInfo.pop(PTPField.payment_status)
+
+        formattedChallanInfoList = s.format_challan_info(challanInfo)
+        df = pd.DataFrame.from_records(formattedChallanInfoList)
+        writer = pd.ExcelWriter('Test.xlsx')
+        df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
+        return writer.save()
+
 
 if __name__ == '__main__':
     s = Scraper()
@@ -181,11 +203,5 @@ if __name__ == '__main__':
     # challanInfo = s.get_challan_info(challanNumbers[0])
 
     challanInfo = dict(mockData)
-    challanInfo.pop(PTPField.payment_url)
-    challanInfo.pop(PTPField.payment_status)
-
-    formattedChallanInfoList = s.format_challan_info(challanInfo)
-    df = pd.DataFrame.from_records(formattedChallanInfoList)
-    writer = pd.ExcelWriter('Test.xlsx')
-    df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
-    writer.save()
+    # s.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
+    s.write_to_excel(challanInfo)
