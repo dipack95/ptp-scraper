@@ -98,4 +98,5 @@ ENV/
 .idea/
 resources/chromedriver.exe
 sample-html/
-src/com/dipack/python/ptp-kaustubh/Test.xlsx
+/output/
+output/
