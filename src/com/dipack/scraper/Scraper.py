@@ -16,9 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    image_save_directory = '../../../../output/evidence_images/'
-    document_save_directory = '../../../../output/'
-    excel_location = document_save_directory + 'Output.xlsx'
+    output_dir = '../../../../output/'
+    image_save_directory = output_dir + 'evidence_images/'
+    excel_location = output_dir + 'Output.xlsx'
+    license_plate_cache = output_dir + 'checked_licenses.txt'
 
     # In seconds
     sleep_time = 20
@@ -81,11 +82,28 @@ def make_dir(dir):
 
 
 class Scraper:
+    checked_licenses = []
+
     def __init__(self):
-        make_dir(Config.document_save_directory)
+        make_dir(Config.output_dir)
         make_dir(Config.image_save_directory)
+        self.checked_licenses = self.read_from_license_cache()
         logging.basicConfig(format='[%(asctime)s] [%(levelname)s] %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p',
                             level=logging.INFO)
+
+    @staticmethod
+    def write_to_license_cache(checkedLicenses):
+        with open(Config.license_plate_cache, 'w') as licensePlateCache:
+            for checkedPlate in checkedLicenses:
+                licensePlateCache.write('%s, '.format(checkedPlate.__str__()))
+
+    @staticmethod
+    def read_from_license_cache():
+        if os.path.exists(Config.license_plate_cache):
+            checkedLicenses = open(Config.license_plate_cache, 'r').read().split(',')
+            return set([cl.split() for cl in checkedLicenses])
+        else:
+            return []
 
     @staticmethod
     def multi_letters(seq):
@@ -236,10 +254,13 @@ if __name__ == '__main__':
     licenseCharSeq = list(islice(Scraper.multi_letters(ascii_uppercase), 26 * 27))
     licenseCharSeq = licenseCharSeq[26:]
 
-    plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 20))
-    # plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
+    # plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 20))
+    plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
+    logger.info('Filtering out already checked licenses from cache')
+    plates = [x for x in plates if x not in Scraper.checked_licenses]
     # plates = [sampleLicensePlate]
 
+    checkedList = []
     for index, plate in enumerate(plates):
         logger.info('Fetching challans for plate: {}'.format(plate.__str__()))
         challanList = Scraper.get_challans_for_plate(plate)
@@ -253,6 +274,10 @@ if __name__ == '__main__':
                 df = df.append(challanDf)
         else:
             logger.warning('No challans found for plate: {}'.format(plate.__str__()))
+
+        logger.info('Adding current plate to cache')
+        checkedList = checkedList.append(plate.__str__())
+        Scraper.write_to_license_cache(checkedList)
 
         if not index % 10:
             logger.info('Sleeping for {} seconds'.format(Config.sleep_time))
