@@ -82,7 +82,6 @@ def make_dir(dir):
 
 
 class Scraper:
-    checked_licenses = []
 
     def __init__(self):
         make_dir(Config.output_dir)
@@ -93,15 +92,15 @@ class Scraper:
 
     @staticmethod
     def write_to_license_cache(checkedLicenses):
-        with open(Config.license_plate_cache, 'w') as licensePlateCache:
+        with open(Config.license_plate_cache, 'a+') as licensePlateCache:
             for checkedPlate in checkedLicenses:
-                licensePlateCache.write('%s, '.format(checkedPlate.__str__()))
+                licensePlateCache.write('{}, '.format(checkedPlate.__str__()))
 
     @staticmethod
     def read_from_license_cache():
         if os.path.exists(Config.license_plate_cache):
             checkedLicenses = open(Config.license_plate_cache, 'r').read().split(',')
-            return set([cl.split() for cl in checkedLicenses])
+            return [cl.strip() for cl in checkedLicenses if cl != '']
         else:
             return []
 
@@ -250,14 +249,15 @@ if __name__ == '__main__':
     df = pd.DataFrame(columns=excelColumnHeaderOrder)
 
     s = Scraper()
+    checked_licenses = Scraper.read_from_license_cache()
 
     licenseCharSeq = list(islice(Scraper.multi_letters(ascii_uppercase), 26 * 27))
     licenseCharSeq = licenseCharSeq[26:]
 
     # plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 20))
     plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
-    logger.info('Filtering out already checked licenses from cache')
-    plates = [x for x in plates if x not in Scraper.checked_licenses]
+    logger.info('Filtering out already checked licenses from cache: {}'.format(checked_licenses))
+    plates = [x for x in plates if x not in checked_licenses]
     # plates = [sampleLicensePlate]
 
     checkedList = []
@@ -276,10 +276,10 @@ if __name__ == '__main__':
             logger.warning('No challans found for plate: {}'.format(plate.__str__()))
 
         logger.info('Adding current plate to cache')
-        checkedList = checkedList.append(plate.__str__())
+        checkedList = np.append(checkedList, plate.__str__())
         Scraper.write_to_license_cache(checkedList)
 
-        if not index % 10:
+        if not index % 10 and index != 0:
             logger.info('Sleeping for {} seconds'.format(Config.sleep_time))
             time.sleep(Config.sleep_time)
             logger.info('Resuming execution')
