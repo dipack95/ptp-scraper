@@ -1,3 +1,5 @@
+import os
+import errno
 import requests
 import logging
 from urllib.parse import urlparse, urljoin, parse_qs
@@ -12,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    image_save_directory = '../../../output/evidence_images/'
-    document_save_directory = '../../../output/'
+    image_save_directory = '../../../../output/evidence_images/'
+    document_save_directory = '../../../../output/'
 
 
 class PTPField:
@@ -61,8 +63,20 @@ excelColumnHeaderOrder = [
 ]
 
 
+def make_dir(dir):
+    try:
+        os.makedirs(dir, exist_ok=True)
+    except OSError as ex:
+        if ex.errno == errno.EEXIST and os.path.isdir(dir):
+            pass
+        else:
+            raise
+
+
 class Scraper:
     def __init__(self):
+        make_dir(Config.document_save_directory)
+        make_dir(Config.image_save_directory)
         logging.basicConfig(format='[%(asctime)s] [%(levelname)s] %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p',
                             level=logging.INFO)
 
@@ -220,9 +234,10 @@ if __name__ == '__main__':
         challanNumbers = [challan for challan in challanList]
         for challanNumber in challanNumbers:
             challanInfo = Scraper.get_challan_info(challanNumber)
-            challanInfo = dict(mockData)
+            # challanInfo = dict(mockData)
             Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
             challanDf = s.convert_to_df(challanInfo)
+            df = df.append(challanDf)
 
     writer = pd.ExcelWriter(Config.document_save_directory + 'Output.xlsx')
     df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
