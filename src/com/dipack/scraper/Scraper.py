@@ -230,18 +230,21 @@ if __name__ == '__main__':
     licenseCharSeq = licenseCharSeq[26:]
 
     plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 10))
-    plates = [sampleLicensePlate]
+    # plates = [sampleLicensePlate]
 
     for plate in plates:
         logger.info('Fetching challans for plate: {}'.format(plate.__str__()))
         challanList = Scraper.get_challans_for_plate(plate)
-        challanNumbers = [challan for challan in challanList]
-        for challanNumber in challanNumbers:
-            challanInfo = Scraper.get_challan_info(challanNumber)
-            # challanInfo = dict(mockData)
-            Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
-            challanDf = s.convert_to_df(challanInfo)
-            df = df.append(challanDf)
+        if challanList:
+            challanNumbers = [challan for challan in challanList]
+            for challanNumber in challanNumbers:
+                challanInfo = Scraper.get_challan_info(challanNumber)
+                # challanInfo = dict(mockData)
+                Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
+                challanDf = s.convert_to_df(challanInfo)
+                df = df.append(challanDf)
+        else:
+            logger.warning('No challans found for plate: {}'.format(plate.__str__()))
 
     writer = pd.ExcelWriter(Config.document_save_directory + 'Output.xlsx')
     df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
