@@ -3,6 +3,8 @@ import errno
 import requests
 import logging
 from urllib.parse import urlparse, urljoin, parse_qs
+
+import time
 from bs4 import BeautifulSoup as bs
 from itertools import count, product, islice
 from string import ascii_uppercase
@@ -16,6 +18,10 @@ logger = logging.getLogger(__name__)
 class Config:
     image_save_directory = '../../../../output/evidence_images/'
     document_save_directory = '../../../../output/'
+    excel_location = document_save_directory + 'Output.xlsx'
+
+    # In seconds
+    sleep_time = 5
 
 
 class PTPField:
@@ -229,8 +235,11 @@ if __name__ == '__main__':
     licenseCharSeq = list(islice(Scraper.multi_letters(ascii_uppercase), 26 * 27))
     licenseCharSeq = licenseCharSeq[26:]
 
-    plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 10))
+    plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 20))
+    # plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
     # plates = [sampleLicensePlate]
+
+    count = 0
 
     for plate in plates:
         logger.info('Fetching challans for plate: {}'.format(plate.__str__()))
@@ -246,6 +255,13 @@ if __name__ == '__main__':
         else:
             logger.warning('No challans found for plate: {}'.format(plate.__str__()))
 
-    writer = pd.ExcelWriter(Config.document_save_directory + 'Output.xlsx')
+        count += 1
+        if not count % 10:
+            logger.info('Sleeping for {} seconds'.format(Config.sleep_time))
+            time.sleep(Config.sleep_time)
+            logger.info('Resuming execution')
+
+    logger.info('Beginning write to excel file: {}'.format(Config.excel_location))
+    writer = pd.ExcelWriter(Config.excel_location)
     df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
     writer.save()
