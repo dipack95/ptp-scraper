@@ -21,7 +21,8 @@ class Config:
     excel_location = document_save_directory + 'Output.xlsx'
 
     # In seconds
-    sleep_time = 5
+    sleep_time = 20
+    wait_time_for_requests = 2
 
 
 class PTPField:
@@ -239,9 +240,7 @@ if __name__ == '__main__':
     # plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
     # plates = [sampleLicensePlate]
 
-    count = 0
-
-    for plate in plates:
+    for index, plate in enumerate(plates):
         logger.info('Fetching challans for plate: {}'.format(plate.__str__()))
         challanList = Scraper.get_challans_for_plate(plate)
         if challanList:
@@ -255,13 +254,13 @@ if __name__ == '__main__':
         else:
             logger.warning('No challans found for plate: {}'.format(plate.__str__()))
 
-        count += 1
-        if not count % 10:
+        if not index % 10:
             logger.info('Sleeping for {} seconds'.format(Config.sleep_time))
             time.sleep(Config.sleep_time)
             logger.info('Resuming execution')
+        time.sleep(Config.wait_time_for_requests)
 
-    logger.info('Beginning write to excel file: {}'.format(Config.excel_location))
+    logger.info('Beginning write to excel file: {}'.format(os.path.abspath(Config.excel_location)))
     writer = pd.ExcelWriter(Config.excel_location)
     df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
     writer.save()
