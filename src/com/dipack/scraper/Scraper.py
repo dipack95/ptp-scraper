@@ -196,17 +196,21 @@ class Scraper:
         return formattedChallanInfoList
 
     @staticmethod
-    def download_images(links, challanNumber):
+    def download_images(links, challanNumber, forceDownload=False):
         logger.info("Downloading images for challan {}".format(challanNumber))
         for img in links:
             imgFileName = Config.image_save_directory + challanNumber + '_' + img.__str__().split('/')[-1]
-            with open(imgFileName, 'wb') as imgFile:
-                response = requests.get(img)
-                if not response.ok:
-                    logger.error("Failed to download images!")
-                    pass
-                else:
-                    imgFile.write(response.content)
+            if not os.path.exists(imgFileName) and forceDownload:
+                with open(imgFileName, 'wb') as imgFile:
+                    response = requests.get(img)
+                    if not response.ok:
+                        logger.error("Failed to download images!")
+                        pass
+                    else:
+                        imgFile.write(response.content)
+            else:
+                logger.info(
+                    'Will not re-download the image as it already exists at: {}'.format(os.path.abspath(imgFileName)))
 
     def convert_to_df(self, challanInfo):
         challanInfo.pop(PTPField.payment_url)
