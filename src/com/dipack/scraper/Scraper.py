@@ -179,8 +179,8 @@ class Scraper:
         dataTable = bs(response.content, 'lxml').find_all('tr')
         for row in dataTable:
             columns = row.find_all('td')
-            k = '';
-            v = '';
+            k = ''
+            v = ''
             for element in columns:
                 if element == columns[0]:
                     k = element.text.rstrip(':').strip().lower().replace(' ', '_')
