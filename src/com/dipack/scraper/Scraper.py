@@ -11,6 +11,11 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+class Config:
+    image_save_directory = '../../../output/evidence_images/'
+    document_save_directory = '../../../output/'
+
+
 class PTPField:
     vehicle_no = 'vehicle_no'
     license_no = 'license_no'
@@ -74,7 +79,15 @@ class Scraper:
                 for plateNumber in range(1000, 9999):
                     yield ''.join(['MH', (rto + 1).__str__().zfill(2), charSeq, plateNumber.__str__()])
 
-    def get_challans_for_plate(self, licensePlate):
+    @staticmethod
+    def rto_license_plate_generator(licenseCharList, rto=12):
+        for charSeq in licenseCharList:
+            for plateNumber in range(1000, 9999):
+                yield ''.join(['MH', (rto).__str__().zfill(2), charSeq, plateNumber.__str__()])
+
+    @staticmethod
+    def get_challans_for_plate(licensePlate):
+        logger.debug('Get Challans for Plate: {}'.format(licensePlate.__str__()))
         ptpUrl = 'https://punetrafficop.net'
 
         allChallans = {}
@@ -113,7 +126,9 @@ class Scraper:
 
         return allChallans
 
-    def get_challan_info(self, challanNumber):
+    @staticmethod
+    def get_challan_info(challanNumber):
+        logger.debug('Getting detailed info for challan: {}'.format(challanNumber))
         dataDict = {}
         getChallanInfoUrl = 'http://punetrafficop.net/y/x?x='
         getInfoForChallanUrl = getChallanInfoUrl + challanNumber
@@ -150,7 +165,8 @@ class Scraper:
         validKeys = {k: dataDict[k] for k in dataDict.keys() if str(k[0]).upper() in ascii_uppercase}
         return validKeys
 
-    def format_challan_info(self, challanInfo):
+    @staticmethod
+    def format_challan_info(challanInfo):
         for k, v in challanInfo.items():
             if isinstance(v, list):
                 if not isinstance(v[0], dict):
@@ -165,10 +181,11 @@ class Scraper:
             formattedChallanInfoList = np.append(formattedChallanInfoList, d)
         return formattedChallanInfoList
 
-    def download_images(self, links, challanNumber):
+    @staticmethod
+    def download_images(links, challanNumber):
         logger.info("Downloading images for challan {}".format(challanNumber))
         for img in links:
-            imgFileName = challanNumber + '_' + img.__str__().split('/')[-1]
+            imgFileName = Config.image_save_directory + challanNumber + '_' + img.__str__().split('/')[-1]
             with open(imgFileName, 'wb') as imgFile:
                 response = requests.get(img)
                 if not response.ok:
@@ -177,31 +194,36 @@ class Scraper:
                 else:
                     imgFile.write(response.content)
 
-    def write_to_excel(self, challanInfo):
+    def convert_to_df(self, challanInfo):
         challanInfo.pop(PTPField.payment_url)
         challanInfo.pop(PTPField.payment_status)
 
-        formattedChallanInfoList = s.format_challan_info(challanInfo)
-        df = pd.DataFrame.from_records(formattedChallanInfoList)
-        writer = pd.ExcelWriter('Test.xlsx')
-        df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
-        return writer.save()
+        formattedChallanInfoList = self.format_challan_info(challanInfo)
+        return pd.DataFrame.from_records(formattedChallanInfoList)
 
 
 if __name__ == '__main__':
-    s = Scraper()
-    # licenseCharSeq = list(islice(Scraper.multiletters(ascii_uppercase), 26 * 27))
-    # licenseCharSeq = licenseCharSeq[26:]
-    # plates = list(islice(Scraper.license_plate_generator(licenseCharSeq), 10))
     sampleLicensePlate = 'mh12jb2300'
-    # for plate in plates:
-    #     print('Plate: {}, Data: {}'.format(plate, s.get_challans_for_plate(plate)))
+    df = pd.DataFrame(columns=excelColumnHeaderOrder)
 
-    # Uncomment this out when you're ready for show time
-    # challanList = s.get_challans_for_plate(sampleLicensePlate)
-    # challanNumbers = [challan for challan in challanList]
-    # challanInfo = s.get_challan_info(challanNumbers[0])
+    s = Scraper()
 
-    challanInfo = dict(mockData)
-    # s.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
-    s.write_to_excel(challanInfo)
+    licenseCharSeq = list(islice(Scraper.multi_letters(ascii_uppercase), 26 * 27))
+    licenseCharSeq = licenseCharSeq[26:]
+
+    plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 10))
+    plates = [sampleLicensePlate]
+
+    for plate in plates:
+        logger.info('Fetching challans for plate: {}'.format(plate.__str__()))
+        challanList = Scraper.get_challans_for_plate(plate)
+        challanNumbers = [challan for challan in challanList]
+        for challanNumber in challanNumbers:
+            challanInfo = Scraper.get_challan_info(challanNumber)
+            challanInfo = dict(mockData)
+            Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
+            challanDf = s.convert_to_df(challanInfo)
+
+    writer = pd.ExcelWriter(Config.document_save_directory + 'Output.xlsx')
+    df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
+    writer.save()
