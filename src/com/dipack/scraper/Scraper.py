@@ -98,7 +98,7 @@ class Scraper:
     def read_from_cache(toRead):
         if os.path.exists(toRead):
             checkedLicenses = open(toRead, 'r').read().split(',')
-            return [cl.strip() for cl in checkedLicenses if cl != '']
+            return [cl.strip() for cl in checkedLicenses if cl.__str__()]
         else:
             return []
 
@@ -205,6 +205,7 @@ class Scraper:
                         v = element.text.strip()
             if k not in dataDict.keys():
                 dataDict[k] = v
+        dataDict.pop(PTPField.sections)
         validKeys = {k: dataDict[k] for k in dataDict.keys() if str(k[0]).upper() in ascii_uppercase}
         return validKeys
 
@@ -253,6 +254,17 @@ class Scraper:
         formattedChallanInfoList = self.format_challan_info(challanInfo)
         return pd.DataFrame.from_records(formattedChallanInfoList)
 
+    @staticmethod
+    def update_excel(infoDf):
+        if isinstance(infoDf, pd.DataFrame):
+            excelDf = pd.read_excel(Config.excel_location).drop_duplicates()
+            excelDf = excelDf.append(infoDf)
+            writer = pd.ExcelWriter(Config.excel_location)
+            excelDf.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
+            writer.save()
+            return True
+        return False
+
 
 if __name__ == '__main__':
     sampleLicensePlate = 'mh12jb2300'
@@ -261,7 +273,7 @@ if __name__ == '__main__':
     s = Scraper()
     Scraper.clean_cache(Config.license_plate_cache)
     Scraper.clean_cache(Config.found_challan_cache)
-    checked_licenses = Scraper.read_from_cache(Config.license_plate_cache)
+    checked_licenses = np.sort(Scraper.read_from_cache(Config.license_plate_cache))
 
     licenseCharSeq = list(islice(Scraper.multi_letters(ascii_uppercase), 26 * 27))
     licenseCharSeq = licenseCharSeq[26:]
@@ -269,13 +281,13 @@ if __name__ == '__main__':
     # plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 20))
     plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
     logger.info('Filtering out already checked licenses from cache: {}'.format(checked_licenses))
-    plates = [x for x in plates if x not in checked_licenses]
+    plates = plates[len(checked_licenses[1:]):]
     # plates = [sampleLicensePlate]
 
     checkedList = []
     foundChallans = []
     for index, plate in enumerate(plates):
-        logger.info('Fetching challans for plate: {}'.format(plate.__str__()))
+        logger.info('Index: {}, Fetching challans for plate: {}'.format(index.__str__(), plate.__str__()))
         challanList = Scraper.get_challans_for_plate(plate)
         if challanList:
             challanNumbers = [challan for challan in challanList]
@@ -287,6 +299,9 @@ if __name__ == '__main__':
                     Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
                     challanDf = s.convert_to_df(challanInfo)
                     df = df.append(challanDf)
+                    logger.info('Writing to excel file: {}'.format(os.path.abspath(Config.excel_location)))
+                    if not Scraper.update_excel(challanDf):
+                        logger.error('Failed to update excel file!')
                 else:
                     logger.error('No information retrieved for challan: {}'.format(challanNumber))
         else:
@@ -306,7 +321,14 @@ if __name__ == '__main__':
             Scraper.clean_cache(Config.found_challan_cache)
         time.sleep(Config.wait_time_for_requests)
 
-    logger.info('Beginning write to excel file: {}'.format(os.path.abspath(Config.excel_location)))
-    writer = pd.ExcelWriter(Config.excel_location)
-    df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
-    writer.save()
+    """
+        Tips for writing to Excel:
+        1. Read the excel sheet first to a df (header=True)
+        2. Append the new df to the existing df (from the excel)
+        3. df.to_excel seems to work then!
+    """
+    logger.info('END!')
+    # logger.info('Beginning write to excel file: {}'.format(os.path.abspath(Config.excel_location)))
+    # writer = pd.ExcelWriter(Config.excel_location)
+    # df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
+    # writer.save()
