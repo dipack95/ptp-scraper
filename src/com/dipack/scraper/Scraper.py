@@ -22,7 +22,7 @@ class Config:
     found_challan_cache = output_dir + 'found_challans.txt'
 
     # In seconds
-    sleep_time = 20
+    sleep_time = 5
     wait_time_for_requests = 2
 
 
@@ -279,9 +279,13 @@ if __name__ == '__main__':
     licenseCharSeq = licenseCharSeq[26:]
 
     # plates = list(islice(Scraper.rto_license_plate_generator(licenseCharSeq), 20))
-    plates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
+    genPlates = list(Scraper.rto_license_plate_generator(licenseCharSeq))
+    logger.info(
+        'Checked plates length: {}, plates length: {}'.format(checked_licenses[-1].__str__(), len(checked_licenses)))
     logger.info('Filtering out already checked licenses from cache: {}'.format(checked_licenses))
-    plates = plates[len(checked_licenses[1:]):]
+    startIndex = genPlates.index(checked_licenses[-1]) - 1
+    logger.info('Starting from plate: {}, index: {}'.format(genPlates[startIndex].__str__(), startIndex))
+    plates = genPlates[startIndex:]
     # plates = [sampleLicensePlate]
 
     checkedList = []
