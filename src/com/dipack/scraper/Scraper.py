@@ -14,18 +14,6 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-class Config:
-    output_dir = '../../../../output/'
-    image_save_directory = output_dir + 'evidence_images/'
-    excel_location = output_dir + 'Output.xlsx'
-    license_plate_cache = output_dir + 'checked_licenses.txt'
-    found_challan_cache = output_dir + 'found_challans.txt'
-
-    # In seconds
-    sleep_time = 5
-    wait_time_for_requests = 2
-
-
 class PTPField:
     vehicle_no = 'vehicle_no'
     license_no = 'license_no'
@@ -45,6 +33,34 @@ class PTPField:
     inner_fine_amount = 'fine_amount'
 
 
+class Config:
+    output_dir = '../../../../output/'
+    image_save_directory = output_dir + 'evidence_images/'
+    excel_location = output_dir + 'Output.xlsx'
+    license_plate_cache = output_dir + 'checked_licenses.txt'
+    found_challan_cache = output_dir + 'found_challans.txt'
+
+    # Excel columns order for the excel sheet
+    excelColumnHeaderOrder = [
+        PTPField.challan_no,
+        PTPField.vehicle_no,
+        PTPField.license_no,
+        PTPField.offense_date,
+        PTPField.offense_time,
+        PTPField.offender_mobile_no,
+        PTPField.inner_offences,
+        PTPField.inner_sections,
+        PTPField.inner_fine_amount,
+        PTPField.compounding_fees,
+        PTPField.evidences,
+        PTPField.impounded_document
+    ]
+
+    # In seconds
+    sleep_time = 5
+    wait_time_for_requests = 2
+
+
 mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
             'offences': [{'fine_amount': '200', 'offenses': 'Halting ahead white line', 'sections': '19(1)/177 MVA'},
                          {'fine_amount': '500', 'offenses': 'Without Helmet', 'sections': '129/177'}],
@@ -54,21 +70,6 @@ mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
                           'http://punetrafficop.online:8080/File/PTPCHC170504000978_02.png'],
             'impounded_document': 'No Impound', 'offense_date': '2017-05-04', 'offender_mobile_no': 'NA',
             'license_no': 'NA'}
-
-excelColumnHeaderOrder = [
-    PTPField.challan_no,
-    PTPField.vehicle_no,
-    PTPField.license_no,
-    PTPField.offense_date,
-    PTPField.offense_time,
-    PTPField.offender_mobile_no,
-    PTPField.inner_offences,
-    PTPField.inner_sections,
-    PTPField.inner_fine_amount,
-    PTPField.compounding_fees,
-    PTPField.evidences,
-    PTPField.impounded_document
-]
 
 
 def make_dir(dir):
@@ -260,7 +261,7 @@ class Scraper:
             excelDf = pd.read_excel(Config.excel_location).drop_duplicates()
             excelDf = excelDf.append(infoDf)
             writer = pd.ExcelWriter(Config.excel_location)
-            excelDf.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
+            excelDf.to_excel(writer, header=True, index=False, columns=Config.excelColumnHeaderOrder)
             writer.save()
             return True
         return False
@@ -268,7 +269,7 @@ class Scraper:
 
 if __name__ == '__main__':
     sampleLicensePlate = 'mh12jb2300'
-    df = pd.DataFrame(columns=excelColumnHeaderOrder)
+    df = pd.DataFrame(columns=Config.excelColumnHeaderOrder)
 
     s = Scraper()
     Scraper.clean_cache(Config.license_plate_cache)
@@ -334,5 +335,5 @@ if __name__ == '__main__':
     logger.info('END!')
     # logger.info('Beginning write to excel file: {}'.format(os.path.abspath(Config.excel_location)))
     # writer = pd.ExcelWriter(Config.excel_location)
-    # df.to_excel(writer, header=True, index=False, columns=excelColumnHeaderOrder)
+    # df.to_excel(writer, header=True, index=False, columns=Config.excelColumnHeaderOrder)
     # writer.save()
