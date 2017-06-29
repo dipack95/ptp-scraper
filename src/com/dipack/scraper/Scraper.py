@@ -1,4 +1,6 @@
 import os
+import shutil
+import datetime
 import errno
 import requests
 import logging
@@ -35,6 +37,7 @@ class PTPField:
 
 class Config:
     output_dir = '../../../../output/'
+    backup_output_dir = '../../../../backup-output/'
     image_save_directory = output_dir + 'evidence_images/'
     excel_location = output_dir + 'Output.xlsx'
     license_plate_cache = output_dir + 'checked_licenses.txt'
@@ -324,6 +327,22 @@ if __name__ == '__main__':
             logger.info('Cleaning up caches')
             Scraper.clean_cache(Config.license_plate_cache)
             Scraper.clean_cache(Config.found_challan_cache)
+
+        if not index % 50 and index != 0:
+            logger.info('Cleaning up caches')
+            Scraper.clean_cache(Config.license_plate_cache)
+            Scraper.clean_cache(Config.found_challan_cache)
+            outputDirAbsPath = os.path.abspath(Config.output_dir)
+            backupOutputDir = Config.backup_output_dir + '/output-' + datetime.datetime.utcnow().isoformat().replace(
+                ':', '.')
+            backupOutputDirAbsPath = os.path.abspath(backupOutputDir)
+            logger.info('Backing up {} to {}'.format(outputDirAbsPath, backupOutputDirAbsPath))
+            success = shutil.copytree(outputDirAbsPath, backupOutputDirAbsPath)
+            if success == backupOutputDirAbsPath:
+                logger.info('Successfully completed back up!')
+            else:
+                logger.warning('Failed to back up!')
+
         time.sleep(Config.wait_time_for_requests)
 
     """
