@@ -60,8 +60,8 @@ class Config:
     ]
 
     # In seconds
-    sleep_time = 5
-    wait_time_for_requests = 2
+    sleep_time = 4
+    wait_time_for_requests = 1
 
 
 mockData = {'challan_no': 'PTPCHC170504000978', 'vehicle_no': 'MH12JB2300',
@@ -83,6 +83,11 @@ def make_dir(dir):
             pass
         else:
             raise
+
+
+def check_internet_connection():
+    response = requests.get("http://www.google.com")
+    return response.status_code == 200
 
 
 class Scraper:
@@ -270,7 +275,7 @@ class Scraper:
         return False
 
 
-if __name__ == '__main__':
+def run():
     sampleLicensePlate = 'mh12jb2300'
     df = pd.DataFrame(columns=Config.excelColumnHeaderOrder)
 
@@ -320,7 +325,7 @@ if __name__ == '__main__':
         Scraper.write_to_cache(Config.license_plate_cache, checkedList)
         Scraper.write_to_cache(Config.found_challan_cache, foundChallans)
 
-        if not index % 10 and index != 0:
+        if not index % 20 and index != 0:
             logger.info('Sleeping for {} seconds'.format(Config.sleep_time))
             time.sleep(Config.sleep_time)
             logger.info('Resuming execution')
@@ -328,7 +333,7 @@ if __name__ == '__main__':
             Scraper.clean_cache(Config.license_plate_cache)
             Scraper.clean_cache(Config.found_challan_cache)
 
-        if not index % 50 and index != 0:
+        if not index % 100 and index != 0:
             logger.info('Cleaning up caches')
             Scraper.clean_cache(Config.license_plate_cache)
             Scraper.clean_cache(Config.found_challan_cache)
@@ -344,15 +349,18 @@ if __name__ == '__main__':
                 logger.warning('Failed to back up!')
 
         time.sleep(Config.wait_time_for_requests)
-
-    """
-        Tips for writing to Excel:
-        1. Read the excel sheet first to a df (header=True)
-        2. Append the new df to the existing df (from the excel)
-        3. df.to_excel seems to work then!
-    """
     logger.info('END!')
-    # logger.info('Beginning write to excel file: {}'.format(os.path.abspath(Config.excel_location)))
-    # writer = pd.ExcelWriter(Config.excel_location)
-    # df.to_excel(writer, header=True, index=False, columns=Config.excelColumnHeaderOrder)
-    # writer.save()
+
+
+if __name__ == '__main__':
+    runs = 0
+    while runs < 3:
+        try:
+            run()
+        except Exception as ex:
+            logger.error(ex.__str__())
+        if not check_internet_connection():
+            logger.error('Internet connection is down!')
+        runs += 1
+    if runs >= 3:
+        logger.error('Maximum number of program retries reached: {}'.format(runs))
