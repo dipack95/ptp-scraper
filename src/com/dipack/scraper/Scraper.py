@@ -303,20 +303,22 @@ def run():
         logger.info('Index: {}, Fetching challans for plate: {}'.format(index.__str__(), plate.__str__()))
         challanList = Scraper.get_challans_for_plate(plate)
         if challanList:
+            challansDf = pd.DataFrame(columns=Config.excelColumnHeaderOrder)
             challanNumbers = [challan for challan in challanList]
             for challanNumber in challanNumbers:
                 challanInfo = Scraper.get_challan_info(challanNumber)
                 # challanInfo = dict(mockData)
                 if challanInfo:
                     foundChallans = np.append(foundChallans, challanInfo[PTPField.challan_no])
-                    Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
+                    # Scraper.download_images(challanInfo[PTPField.evidences], challanInfo[PTPField.challan_no])
                     challanDf = s.convert_to_df(challanInfo)
                     df = df.append(challanDf)
-                    logger.info('Writing to excel file: {}'.format(os.path.abspath(Config.excel_location)))
-                    if not Scraper.update_excel(challanDf):
-                        logger.error('Failed to update excel file!')
+                    challansDf = challansDf.append(challanDf)
                 else:
                     logger.error('No information retrieved for challan: {}'.format(challanNumber))
+            logger.info('Writing {} records to excel file: {}'.format(challansDf.__len__(), os.path.abspath(Config.excel_location)))
+            if not Scraper.update_excel(challansDf):
+                logger.error('Failed to update excel file!')
         else:
             logger.warning('No challans found for plate: {}'.format(plate.__str__()))
 
@@ -333,7 +335,7 @@ def run():
             Scraper.clean_cache(Config.license_plate_cache)
             Scraper.clean_cache(Config.found_challan_cache)
 
-        if not index % 100 and index != 0:
+        if not index % 200 and index != 0:
             logger.info('Cleaning up caches')
             Scraper.clean_cache(Config.license_plate_cache)
             Scraper.clean_cache(Config.found_challan_cache)
@@ -354,11 +356,13 @@ def run():
 
 if __name__ == '__main__':
     runs = 0
-    while runs < 3:
+    while runs < 5:
         try:
             run()
         except Exception as ex:
+            logger.error('***************************FAILURE***************************')
             logger.error(ex.__str__())
+            logger.error('***************************FAILURE***************************')
         if not check_internet_connection():
             logger.error('Internet connection is down!')
         runs += 1
